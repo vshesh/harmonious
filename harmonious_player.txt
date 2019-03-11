@@ -17,6 +17,16 @@ fiducial_map = [
   (ring 0, 3, 6, 10)
 ]
 
+inverted_fiducial_map = [
+  (ring 4, 12, 19, 23, 26), # Cmaj9/E for example
+  (ring 3, 7, 12, 14, 19, 24), #Dm9/F for example
+  (ring 3, 7, 12, 17, 24), #Em11/G for example
+  (ring 4, 7, 12, 16, 23), #Fmaj7(#11)/A for example
+  (ring -8, 0, 7, 10, 16, 21), # G13/B for example
+  (ring 3, 7, 12, 14, 17), #Am11/C for example
+  (ring 3, 6, 10, 12), #Bm7b5/D for example
+]
+
 define :shift do |n, iterable|
   l = []
   d = note(n)
@@ -26,18 +36,20 @@ define :shift do |n, iterable|
   l
 end
 
-define :make_key do |tonic|
+define :make_key do |tonic, voicings|
   l = [[]]
   maj = (scale :major)
   [0,1,2,3,4,5,6].each do |i|
-    puts i
-    l.push shift note(tonic)+maj[i], fiducial_map[i]
+    l.push shift note(tonic)+maj[i], voicings[i]
   end
   l
 end
 
-key_c = make_key :C3
-play key_c[1]
+key_c = make_key :C3, fiducial_map
+ikey_c = make_key :C3, inverted_fiducial_map
+play key_c[5], sustain: 2, release:0
+sleep 2
+play key_c[1], sustain: 2
 
 define :get_tower_number do |x|
   # subtract margins and then take a quadrant
@@ -103,8 +115,8 @@ live_loop :progression do
 end
 
 
-set :note1, nil
-key_c = make_key :C3
+##| set :note1, nil
+##| key_c = make_key :C3
 
 # individual loops for each chord when user presses button
 # note have to set the amplitude of the running note to on or off based on the button being pressed

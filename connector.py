@@ -119,7 +119,8 @@ def make_debouncer(sender):
 def demo():
     try:
         client = TuioClient(3333)
-        sender = udp_client.SimpleUDPClient('192.168.43.192', 4559)
+        #sender = udp_client.SimpleUDPClient('192.168.43.192', 4559)
+        sender = udp_client.SimpleUDPClient('localhost', 4559)
         debounce_send = make_debouncer(sender)
     except ServerError as err:
         sys.exit(str(err))
