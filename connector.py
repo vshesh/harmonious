@@ -4,7 +4,9 @@ import os
 from pythonosc import udp_client
 from datetime import datetime
 import toolz as t
+import toolz.curried as tc
 import sys
+import math
 
 """
 py3tuio is a very basic implementation of a TUIO 1.x client written in Python 3 using pyliblo.
@@ -88,9 +90,43 @@ class Tuio2DBlob(TuioObject):
         self.sessionId, self.x, self.y, self.angle, self.width, self.height, self.area, self.xVelocity, self.yVelocity, self.rotationSpeed, self.acceleration, self.rotationAcceleration = args[0:12]
 
 
+
+
 # ^ Everything above here was taken from a github gist: https://github.com/arminbw/py3tuio/blob/master/py3tuio.py
 
-def make_debouncer(sender):
+transform = {
+  (1, False): 'e',
+  (2, False): 'd',
+  (3, False): 't',
+  (4, False): 'c',
+  (5, False): 'p',
+  (6, False): 'x',
+  (7, False): 's',
+  (1, True): 'E',
+  (2, True): 'D',
+  (3, True): 'T',
+  (4, True): 'C',
+  (5, True): 'P',
+  (6, True): 'X',
+  (7, True): 'S',
+}
+
+def polychord_id(d):
+  """
+  Takes map like {markerId: angle}
+  and computes the polychord_id to send to sonic_pi.
+  sonic_pi has a mapping for the voicing that needs to be played based on this polychord diagram.
+  Supports only towers of length 2
+  """
+  
+  # uses order of symbols for order of stack, and capital case for orientation.
+  return t.pipe(d,
+    tc.sorted(key=lambda x: d[x][2], reverse=True),
+    tc.map(lambda x: transform.get((x, 2 < d[x][3] < 5), "")),
+    "".join,
+    lambda x: x[:2])
+
+def make_debouncer(sender, i=0):
     """
     After writing this I realized some of this functionality was already above, but not all of it.
 
@@ -99,29 +135,42 @@ def make_debouncer(sender):
     """
     d = {}
     def debounce(objects):
+        changed = False
         for o in objects:
-            if o.markerId not in d or d[o.markerId][1] != round(o.angle) % 6 or abs(d[o.markerId][2] - o.x) > 0.1:
-                sender.send_message("/tuio/fiducial", [o.markerId, o.x, o.y, round(o.angle) % 6])
-                if o.markerId in d and abs(d[o.markerId][2] - o.x) > 0.1:
-                  # additional message if the marker moved positions
-                  sender.send_message("/tuio/fiducial", [o.markerId, d[o.markerId][2], -1, -1])
-            d[o.markerId] = (datetime.now(), round(o.angle) % 6, o.x, o.y)
-
+            if o.markerId not in d or d[o.markerId][3] != round(o.angle) % 6:
+                changed = True
+            d[o.markerId] = (datetime.now(), o.x, o.y, round(o.angle) % 6)
+        
         old = t.valfilter(lambda x: (datetime.now() - x[0]).seconds > 0.5, d)
         for o in old:
-            sender.send_message("tuio/fiducial", [o, old[o][2], old[o][3], -1])
             d.pop(o)
+        
+        # at this position - either we changed, or we lost a tower
+        if changed or len(old) > 0:
+          if len(d) == 0:
+            # no towers at this position
+            o = next(iter(old))
+            sender.send_message("/tuio/fiducial", [0, old[o][1], 0.5, -1])
+          elif len(d) == 1:
+            o = next(iter(d))
+            sender.send_message("/tuio/fiducial", [o, *d[o][1:]])
+          else:
+            o = next(iter(d))
+            sender.send_message("/tuio/fiducial", [polychord_id(d), *d[o][1:]])
+            
 
-        print(f"d: {d}")
+        print(f"d{i}: {d}")
     return debounce
 
 
 def demo():
     try:
         client = TuioClient(3333)
-        #sender = udp_client.SimpleUDPClient('192.168.43.192', 4559)
+        
+        #sender = udp_client.SimpleUDPClient('192.168.43.75', 4559)
         sender = udp_client.SimpleUDPClient('localhost', 4559)
-        debounce_send = make_debouncer(sender)
+        # 4 senders for four positions independently.
+        debounce_senders = [make_debouncer(sender,i) for i in range(4)]
     except ServerError as err:
         sys.exit(str(err))
     client.start()
@@ -136,7 +185,9 @@ def demo():
             for o in client.tuio2DBlobs:
                 print ("2D blob     id:{:2}   x: {:.6f}   y: {:.6f}".format(o.sessionId, o.x, o.y))
 
-            debounce_send(client.tuio2DObjects)
+            for i in range(len(debounce_senders)):
+              # send to corresponding cache if the position has changed.
+              debounce_senders[i](o for o in client.tuio2DObjects if math.floor(4*o.x) == 3-i)
 
         except:
             client.stop()

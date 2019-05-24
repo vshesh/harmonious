@@ -1,10 +1,14 @@
 # Welcome to Sonic Pi v3.0.1
 
-set :looping?, false
+set :looping?, true
 set :tower1, [0, -1]
 set :tower2, [0, -1]
 set :tower3, [0, -1]
 set :tower4, [0, -1]
+set :note1, nil
+set :note2, nil
+set :note3, nil
+set :note4, nil
 
 #uses index to map the chord - 1-7 are as positioned (dummy argument in zero)
 fiducial_map = [
@@ -26,6 +30,22 @@ inverted_fiducial_map = [
   (ring 3, 7, 12, 14, 17), #Am11/C for example
   (ring 3, 6, 10, 12), #Bm7b5/D for example
 ]
+polychord_base_map = (map e: (ring 0, 4, 7),
+                      E: (ring 4, 7, 12),
+                      d: (shift 2, (ring 0, 3, 7)),
+                      D: (shift 2, (ring 3, 7, 12)),
+                      t: (shift 4, (ring 0, 3, 7)),
+                      T: (shift 4, (ring 3, 7, 12)),
+                      c: (shift 5, (ring 0, 4, 7)),
+                      C: (shift 5, (ring 4, 7, 12)),
+                      p: (shift 7, (ring 0, 4, 7)),
+                      P: (shift 7, (ring 4, 7, 12)),
+                      x: (shift 9, (ring 0, 3, 7)),
+                      X: (shift 9, (ring 3, 7, 12)),
+                      s: (shift 11, (ring 0, 3, 6)),
+                      S: (shift 11, (ring 3, 6, 12))
+                      )
+
 
 define :shift do |n, iterable|
   l = []
@@ -45,6 +65,12 @@ define :make_key do |tonic, voicings|
   l
 end
 
+define :build_polychord do |key_root, base, top|
+  base = polychord_base_map[base]
+  top = polychord_base_map[top]
+  shift key_root, (base + (shift (if top[0]-base[0] < 9 then 12 else 0 end), top))
+end
+
 key_c = make_key :C3, fiducial_map
 ikey_c = make_key :C3, inverted_fiducial_map
 play key_c[5], sustain: 2, release:0
@@ -55,16 +81,16 @@ define :get_tower_number do |x|
   # subtract margins and then take a quadrant
   # scale x to be in 0.05 - 0.95
   scaled = (x-0.05)/(0.95-0.05)
-  if scaled <= 0.25 
+  if scaled <= 0.25
     4
-  else 
-    if x <= 0.5  
-      3 
-    else 
-      if x <= 0.75  
-        2 
-      else  
-        1 
+  else
+    if x <= 0.5
+      3
+    else
+      if x <= 0.75
+        2
+      else
+        1
       end
     end
   end
@@ -81,47 +107,51 @@ live_loop :fiducials do
   set :tower4, [id, angle] if tower == 4
 end
 
-
+# receive button presses
 live_loop :buttons do
   use_real_time
   id, state = sync "/osc/button"
   set :looping?, if state == 1 then true else false end if id == 0
+  control get[:note1], notes: (retrieve_voicing :tower1), amp: if state == 1 then 1 else 0 end if id == 1
+  control get[:note2], notes: (retrieve_voicing :tower2), amp: if state == 1 then 1 else 0 end if id == 2
+  control get[:note3], notes: (retrieve_voicing :tower3), amp: if state == 1 then 1 else 0 end if id == 3
+  control get[:note4], notes: (retrieve_voicing :tower4), amp: if state == 1 then 1 else 0 end if id == 4
+end
+
+define :play_bar do |chord|
+  2.times do
+    play chord if get[:looping?]
+    sleep 1
+  end
+end
+
+define :retrieve_voicing do |symbol|
+  if get[symbol][1] < 0
+    []
+  else
+    if get[symbol][0].is_a? Integer
+      if get[symbol][1] > 2 and get[symbol][1] < 5
+        ikey_c[get[symbol][0]]
+      else
+        key_c[get[symbol][0]]
+      end
+    else
+      # polychord
+      build_polychord :C3, get[symbol][0][0].to_sym, get[symbol][0][1].to_sym
+    end
+  end
 end
 
 # setup main loop
 live_loop :progression do
   use_osc "localhost", 3334
   puts get[:tower1][0], get[:tower1][1]
-  osc "/light", if get[:looping?] then 1 else -1 end, 4 
-  play key_c[get[:tower1][0]] if get[:looping?] and get[:tower1][1] >= 0
-  sleep 1
-  play key_c[get[:tower1][0]] if get[:looping?] and get[:tower1][1] >= 0
-  sleep 1
+  osc "/light", if get[:looping?] then 1 else -1 end, 4
+  play_bar retrieve_voicing :tower1
   osc "/light", if get[:looping?] then 2 else -1 end, 1
-  play key_c[get[:tower2][0]] if get[:looping?] and get[:tower2][1] >= 0
-  sleep 1
-  play key_c[get[:tower2][0]] if get[:looping?] and get[:tower2][1] >= 0
-  sleep 1
-  osc "/light", if get[:looping?] then 3 else -1 end, 2 
-  play key_c[get[:tower3][0]] if get[:looping?] and get[:tower3][1] >= 0
-  sleep 1
-  play key_c[get[:tower3][0]] if get[:looping?] and get[:tower3][1] >= 0
-  sleep 1
+  play_bar retrieve_voicing :tower2
+  osc "/light", if get[:looping?] then 3 else -1 end, 2
+  play_bar retrieve_voicing :tower3
   osc "/light", if get[:looping?] then 4 else -1 end, 3
-  play key_c[get[:tower4][0]] if get[:looping?] and get[:tower4][1] >= 0
-  sleep 1
-  play key_c[get[:tower4][0]] if get[:looping?] and get[:tower4][1] >= 0
-  sleep 1
+  play_bar retrieve_voicing :tower4
 end
-
-
-##| set :note1, nil
-##| key_c = make_key :C3
-
-# individual loops for each chord when user presses button
-# note have to set the amplitude of the running note to on or off based on the button being pressed
-##| live_loop :playbutton1 do
-##|   set :note1, (play key_c[1], amp: 0, attack: 0.2, sustain: 99.8)
-##|   sleep 100
-##| end
-

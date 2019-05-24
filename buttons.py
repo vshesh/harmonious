@@ -51,23 +51,22 @@ pl, rl = make_toggle(0)
 looping.when_pressed = pl
 looping.when_released = rl
 
-button1 = Button(17)
+button1 = Button(22)
 button2 = Button(27)
-button3 = Button(22)
+button3 = Button(17)
 button4 = Button(18)
 p1, r1 = make_push_button(1)
 button1.when_pressed = p1
 button1.when_released = r1
 p2, r2 = make_push_button(2)
 button2.when_pressed = p2
-button1.when_released = r2
+button2.when_released = r2
 p3, r3 = make_push_button(3)
-button1.when_pressed = p3
-button1.when_released = r3
+button3.when_pressed = p3
+button3.when_released = r3
 p4, r4 = make_push_button(4)
-button1.when_pressed = p4
-button1.when_released = r4
-
+button4.when_pressed = p4
+button4.when_released = r4
 
 
 try:
