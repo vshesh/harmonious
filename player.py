@@ -209,28 +209,33 @@ def fiducial_chord(fiducial_map):
 
 from multiprocessing import Process, Lock, Manager
 
-def poller(notes):
-  print('poller is active')
-  while True:
+def bar(notes):
+  for i in range(2):
     send(play_chord(notes))
     time.sleep(1)
+    
+def poller(notes):
+  print('poller is active')
+  i = 0
+  while True:
+    if i >= len(notes): i = 0
+    bar(notes[i])
+    i += 1
 
 
 def setter(notes):
   stdin = open(0)
-  state = {}
+  state = {0: {}}
   print('setter is active')
   for line in stdin:
-    print('line: ', line)
     state = t.merge(state, json.loads(line, object_hook=lambda d: {int(k) if k.lstrip('-').isdigit() else k: v for k, v in d.items()}))
-    print('state = ', state)
-    notes[:] = fiducial_chord(state[0])
+    notes[:] = t.get(list(range(max(state.keys())+1)), t.valmap(fiducial_chord, state), default=[])
     print('notes = ', notes)
 
 
 if __name__ == '__main__':
   manager = Manager()
-  notes = manager.list([])
+  notes = manager.list([[]])
   p1 = Process(target = poller, args=(notes,))
   p2 = Process(target = setter, args=(notes,))
   p1.start()
