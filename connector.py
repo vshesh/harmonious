@@ -132,6 +132,8 @@ def demo(NUM_PADS):
         
         # 4 senders for four positions independently.
         debounce_senders = [make_debouncer(lambda x: print(x, flush=True), i) for i in range(NUM_PADS)]
+        for i in range(NUM_PADS):
+          print(json.dumps({i: {}}), flush=True)
     except ServerError as err:
         sys.exit(str(err))
     client.start()
