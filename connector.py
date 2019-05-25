@@ -7,6 +7,8 @@ import toolz as t
 import toolz.curried as tc
 import sys
 import math
+import simplejson as json
+import requests
 
 """
 py3tuio is a very basic implementation of a TUIO 1.x client written in Python 3 using pyliblo.
@@ -94,38 +96,6 @@ class Tuio2DBlob(TuioObject):
 
 # ^ Everything above here was taken from a github gist: https://github.com/arminbw/py3tuio/blob/master/py3tuio.py
 
-transform = {
-  (1, False): 'e',
-  (2, False): 'd',
-  (3, False): 't',
-  (4, False): 'c',
-  (5, False): 'p',
-  (6, False): 'x',
-  (7, False): 's',
-  (1, True): 'E',
-  (2, True): 'D',
-  (3, True): 'T',
-  (4, True): 'C',
-  (5, True): 'P',
-  (6, True): 'X',
-  (7, True): 'S',
-}
-
-def polychord_id(d):
-  """
-  Takes map like {markerId: angle}
-  and computes the polychord_id to send to sonic_pi.
-  sonic_pi has a mapping for the voicing that needs to be played based on this polychord diagram.
-  Supports only towers of length 2
-  """
-  
-  # uses order of symbols for order of stack, and capital case for orientation.
-  return t.pipe(d,
-    tc.sorted(key=lambda x: d[x][2], reverse=True),
-    tc.map(lambda x: transform.get((x, 2 < d[x][3] < 5), "")),
-    "".join,
-    lambda x: x[:2])
-
 def make_debouncer(sender, i=0):
     """
     After writing this I realized some of this functionality was already above, but not all of it.
@@ -150,48 +120,39 @@ def make_debouncer(sender, i=0):
           if len(d) == 0:
             # no towers at this position
             o = next(iter(old))
-            sender.send_message("/tuio/fiducial", [0, old[o][1], 0.5, -1])
-          elif len(d) == 1:
-            o = next(iter(d))
-            sender.send_message("/tuio/fiducial", [o, *d[o][1:]])
+            sender(i, {})
           else:
-            o = next(iter(d))
-            sender.send_message("/tuio/fiducial", [polychord_id(d), *d[o][1:]])
-            
-
-        print(f"d{i}: {d}")
+            sender(json.dumps({i: {k:[v[-2], v[-1]] for k,v in d.items()}))
     return debounce
 
 
-def demo():
+def demo(NUM_PADS):
     try:
         client = TuioClient(3333)
         
-        #sender = udp_client.SimpleUDPClient('192.168.43.75', 4559)
-        sender = udp_client.SimpleUDPClient('localhost', 4559)
         # 4 senders for four positions independently.
-        debounce_senders = [make_debouncer(sender,i) for i in range(4)]
+        debounce_senders = [make_debouncer(print,i) for i in range(NUM_PADS)]
     except ServerError as err:
         sys.exit(str(err))
     client.start()
     while (True):
         time.sleep(0.1)
         try:
-            os.system('cls' if os.name=='nt' else 'clear') # clear the screen
-            for o in client.tuio2DCursors:
-                print ("2D cursor   id:{:2}   x: {:.6f}   y: {:.6f}".format(o.sessionId, o.x, o.y))
-            for o in client.tuio2DObjects:
-                print ("2D object   id:{:2}   x: {:.6f}   y: {:.6f}".format(o.markerId, o.x, o.y))
-            for o in client.tuio2DBlobs:
-                print ("2D blob     id:{:2}   x: {:.6f}   y: {:.6f}".format(o.sessionId, o.x, o.y))
-
+            # os.system('cls' if os.name=='nt' else 'clear') # clear the screen
+            # for o in client.tuio2DCursors:
+            #     print ("2D cursor   id:{:2}   x: {:.6f}   y: {:.6f}".format(o.sessionId, o.x, o.y))
+            # for o in client.tuio2DObjects:
+            #     print ("2D object   id:{:2}   x: {:.6f}   y: {:.6f}".format(o.markerId, o.x, o.y))
+            # for o in client.tuio2DBlobs:
+            #     print ("2D blob     id:{:2}   x: {:.6f}   y: {:.6f}".format(o.sessionId, o.x, o.y))
+            #
             for i in range(len(debounce_senders)):
               # send to corresponding cache if the position has changed.
-              debounce_senders[i](o for o in client.tuio2DObjects if math.floor(4*o.x) == 3-i)
+              debounce_senders[i](o for o in client.tuio2DObjects if math.floor(NUM_PADS*o.x) == NUM_PADS-1-i)
 
         except:
             client.stop()
-            raise
+            sys.exit()
 
 if __name__ == '__main__':
-  demo()
+  demo(int(sys.argv[1]))
