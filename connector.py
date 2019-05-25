@@ -120,9 +120,9 @@ def make_debouncer(sender, i=0):
           if len(d) == 0:
             # no towers at this position
             o = next(iter(old))
-            sender(i, {})
+            sender(json.dumps({i: {}}))
           else:
-            sender(json.dumps({i: {k:[v[-2], v[-1]] for k,v in d.items()}))
+            sender( json.dumps({i: {k:[v[-2], v[-1]] for k,v in d.items()}}) )
     return debounce
 
 
@@ -131,7 +131,7 @@ def demo(NUM_PADS):
         client = TuioClient(3333)
         
         # 4 senders for four positions independently.
-        debounce_senders = [make_debouncer(print,i) for i in range(NUM_PADS)]
+        debounce_senders = [make_debouncer(lambda x: print(x, flush=True), i) for i in range(NUM_PADS)]
     except ServerError as err:
         sys.exit(str(err))
     client.start()
