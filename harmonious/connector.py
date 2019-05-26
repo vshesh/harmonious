@@ -140,18 +140,10 @@ def demo(NUM_PADS):
     while (True):
         time.sleep(0.1)
         try:
-            # os.system('cls' if os.name=='nt' else 'clear') # clear the screen
-            # for o in client.tuio2DCursors:
-            #     print ("2D cursor   id:{:2}   x: {:.6f}   y: {:.6f}".format(o.sessionId, o.x, o.y))
-            # for o in client.tuio2DObjects:
-            #     print ("2D object   id:{:2}   x: {:.6f}   y: {:.6f}".format(o.markerId, o.x, o.y))
-            # for o in client.tuio2DBlobs:
-            #     print ("2D blob     id:{:2}   x: {:.6f}   y: {:.6f}".format(o.sessionId, o.x, o.y))
-            #
-            for i in range(len(debounce_senders)):
-              # send to corresponding cache if the position has changed.
-              debounce_senders[i](o for o in client.tuio2DObjects if math.floor(NUM_PADS*o.x) == NUM_PADS-1-i)
-
+          for i in range(len(debounce_senders)):
+            # send to corresponding cache if the position has changed.
+            debounce_senders[i](o for o in client.tuio2DObjects if math.floor(NUM_PADS*o.x) == NUM_PADS-1-i)
+            
         except:
             client.stop()
             sys.exit()
