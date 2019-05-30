@@ -1,0 +1,19 @@
+# Welcome to Sonic Pi v3.0.1
+
+major = (ring 0, 4, 7, 12, 16)
+dominant = (ring 0, 7, 10, 12, 16)
+open_major = (ring 0, 4, 7, 12, 16, 24)
+play shift :C3, major
+sleep 1
+play shift :G3, dominant
+sleep 1
+play shift :C3, open_major
+
+define :shift do |n, iterable|
+  l = []
+  d = note(n)
+  iterable.each do |e|
+    l.push (e+d)
+  end
+  l
+end
