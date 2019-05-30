@@ -8,7 +8,6 @@ import toolz.curried as tc
 import sys
 import math
 import simplejson as json
-import requests
 
 """
 py3tuio is a very basic implementation of a TUIO 1.x client written in Python 3 using pyliblo.

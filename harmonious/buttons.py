@@ -1,4 +1,4 @@
-from gpiozero import LED, Button
+#from gpiozero import LED, Button
 from time import sleep
 from pythonosc import udp_client
 from signal import pause
@@ -14,8 +14,8 @@ class LightOSC(ServerThread):
         print('message recieved: ', args)
         if path == '/light':
             ledon, ledoff = args[:2]
-            self.leds[ledoff-1].off()
-            if ledon > 0: self.leds[ledon-1].on()
+            self.leds[ledoff].off()
+            self.leds[ledon].on()
 
 sender = udp_client.SimpleUDPClient('127.0.0.1', 4559)
 
@@ -46,31 +46,19 @@ def make_push_button(tower_id, led=None):
     return pressed, released
 
 
-# looping = Button(23)
-# pl, rl = make_toggle(0)
-# looping.when_pressed = pl
-# looping.when_released = rl
-#
-# button1 = Button(22)
-# button2 = Button(27)
-# button3 = Button(17)
-# button4 = Button(18)
-# p1, r1 = make_push_button(1)
-# button1.when_pressed = p1
-# button1.when_released = r1
-# p2, r2 = make_push_button(2)
-# button2.when_pressed = p2
-# button2.when_released = r2
-# p3, r3 = make_push_button(3)
-# button3.when_pressed = p3
-# button3.when_released = r3
-# p4, r4 = make_push_button(4)
-# button4.when_pressed = p4
-# button4.when_released = r4
-
+class StubLED:
+  def __init__(self, id):
+    self.id = id
+  
+  def on(self):
+    print(f"{self.id} was turned on")
+  
+  def off(self):
+    print(f"{self.id} was turned off")
 
 try:
-    osc = LightOSC(3334, LED(5), LED(6), LED(12), LED(13))
+    osc = LightOSC(3334, StubLED(1), StubLED(2), StubLED(3), StubLED(4))
+    #osc = LightOSC(3334, LED(5), LED(6), LED(12), LED(13))
     osc.start()
 except ServerError as err:
     sys.exit(err)

@@ -5,6 +5,8 @@ import toolz as t
 import simplejson as json
 import time
 from typing import List, Iterable, Union
+from pythonosc import udp_client
+
 
 note_value = {
   'C': 0,
@@ -54,18 +56,19 @@ def note_midi(note, octave = None):
   else:
     return None
 
-# chord naming scheme
-# unlike regular chord names which are deviations from a major chord,
-# these are based on 'layer' presence or absences
+"""
+chord naming scheme
+unlike regular chord names which are deviations from a major chord,
+these are based on 'layer' presence or absences
 
-# 1 - blank
-# 5 (b5 #5)   5 o +
-# b3 3 (2 4)  - ∆ 2 4
-# b7 7        * !
-# 9 (b9 #9)   9 < >
-# 11 #11      ~ ?
-# b13 13      @ =
-
+1 - blank
+5 (b5 #5)   5 o +
+b3 3 (2 4)  - ∆ 2 4
+b7 7        * !
+9 (b9 #9)   9 < >
+11 #11      ~ ?
+b13 13      @ =
+"""
 interval_layer = bidict({
   0: '1',
   2: '_',
@@ -246,7 +249,7 @@ fiducial_roots = {
   30: note_midi('F#', 3),
   31: note_midi('G', 3),
   
-  32: note_midi('G#', 3),
+  32: note_midi('G#', 2),
   33: note_midi('A', 2),
   34: note_midi('A#', 2),
   35: note_midi('B', 2),
@@ -336,7 +339,7 @@ import socket
 HOST = '127.0.0.1'  # The server's hostname or IP address
 PORT = 8000         # The port used by the server
 
-def send(msg):
+def send(HOST, PORT, msg):
   if msg.strip() == '': return
   with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -349,11 +352,15 @@ def send(msg):
       totalsent = totalsent + sent
 
 
+oscsender = udp_client.SimpleUDPClient('127.0.0.1', 3334)
+
 
 def bar(notes):
   for i in range(2):
-    send(play_chord(notes))
-    time.sleep(1.5)
+    try:
+      send(HOST, PORT, play_chord(notes))
+    finally:
+      time.sleep(1.5)
 
 
 def poller(notes):
@@ -361,6 +368,7 @@ def poller(notes):
   i = 0
   while True:
     if i >= len(notes): i = 0
+    oscsender.send_message('/light', [i, (i-1) % len(notes)])
     bar(notes[i])
     i += 1
 
@@ -384,7 +392,7 @@ if __name__ == '__main__':
   manager = Manager()
   notes = manager.list([[]])
   p1 = Process(target = poller, args=(notes,))
-  p2 = Process(target = symbol_setter, args=(notes,))
+  p2 = Process(target = (setter if len(sys.argv) <= 1 else symbol_setter), args=(notes,))
   p1.start()
   p2.start()
   p2.join()
