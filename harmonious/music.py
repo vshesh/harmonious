@@ -45,7 +45,7 @@ NoteValue : 'NoteValue' = IntEnum('NoteValue', {
   'Db':1,  'Gb':6, 'Ab':8, 'Bb':10, 'Eb': 3,
   'C#':1, 'D#':3, 'G#':8, 'A#':10,  'F#': 6,
   # these are just weird, so they exist only as aliases for B/C E/F respectively.
-  'Fb':4,'E#':5,'B#':12, 'Cb':11
+  'Fb':4,'E#':5,'B#':0, 'Cb':11
 })
 
 
@@ -98,15 +98,15 @@ symbol_layers : Mapping[str, str] = {
   'M#11' : '5∆?9!',                                'mM7'  : '5-?',
   'M13'  : '5∆?9=',
   
-  # sus4                  # sus4
-  'sus'  : '5^8',         'sus'  : '5^8',
-  'sus4' : '5^8',         'sus4' : '5^8',
-  'M7sus': '5^?',         'M7sus': '5^?',
-  'M9sus': '5^9',         'M9sus': '5^9',
-  '6sus' : '5^6',         '6sus' : '5^6',
-  '6/9sus': '5^69',       '6/9sus': '5^69',
-  '7sus' : '5^*',         '7sus' : '5^*',
-  '9sus' : '5^*9',        '9sus' : '5^*9',
+  # sus4                  # sus2
+  'sus'  : '5^8',         'sus2'  : '5_8',
+  'sus4' : '5^8',
+  'M7sus': '5^?',         'M7sus2': '5_?',
+  'M9sus': '5^?9',        'M9sus2': '5_?9',
+  '6sus' : '5^6',         '6sus2' : '5_6',
+  '6/9sus': '5^69',       '6/9sus2': '5_69',
+  '7sus' : '5^*',         '7sus2' : '5_*',
+  '9sus' : '5^*9',        '9sus2' : '5_*9',
   
   # diminished            #augmented
   'o'    : 'o-8',         '+'    : '+∆8',
@@ -117,13 +117,68 @@ symbol_layers : Mapping[str, str] = {
   'ob9'  : 'o∆*<',        '++'   : '+∆*9!'
 }
 
-layers_voicings : Mapping[str, Mapping[str, Union[str, List[Union[str, int]]]]] = {
-  '5∆8' : {'default': '151351', 'closed': '1351', 'jazzy': '1513'},
-  '5∆?' : '15?351',
-  '5∆69' : '1561∆59',
-  '5-69' : [1, 5, 6, 1, '-', 5, 9],
-}
+"""
+Maps a set of tones (described by layer/interval symbols) to possible voicings.
 
+Each voicing also has a list of tags describing it in case this is relevant later.
+"""
+layers_voicings = {
+  '5∆8' : {
+    '151∆51': ('guitar',),
+    '1∆51'  : ('closed', 'simple', 'triadic'),
+    '151∆'  : ('jazz', 'simple')
+  },
+  '5∆?' : {
+    '15?1∆51': ('guitar',),
+    '1?∆5': ('guitar', 'simple'),
+    '1∆5?': ('closed', 'triadic', 'simple')
+  },
+  '5∆69' : {
+    '1561∆59': ('neely',)
+  },
+  '5-69': {
+    '1561-59': ('neely',)
+  }
+  # TODO more voicings for various chord types
+  # '5∆?9' : ,
+  # '∆^8' : ,
+  # '5∆?9!' : ,
+  # '5∆?9=' : ,
+  # '5∆*' : ,
+  # '5∆*9' : ,
+  # '5∆*<' : ,
+  # '5∆*>' : ,
+  # '5∆*9!' : ,
+  # '5∆*9=' : ,
+  # '5∆*9@' : ,
+  # '5-8' : ,
+  # '5-*' : ,
+  # '5-*9' : ,
+  # '5-*9~' : ,
+  # '5-*9!' : ,
+  # '4.9?' : ,
+  # '5_8' : ,
+  # '5^8' : ,
+  # '5^8' : ,
+  # '5^?' : ,
+  # '5^9' : ,
+  # '5^6' : ,
+  #  '5^69' : ,
+  # '5^*' : ,
+  # '5^*9' : ,
+  # 'o-8' : ,
+  # 'o-6' : ,
+  # 'o-*' : ,
+  # 'o∆' : ,
+  # 'o∆*9' : ,
+  # 'o∆*<' : ,
+  # '+∆8' : ,
+  # '+∆*' : ,
+  # '+∆*9' : ,
+  # '+∆*<' : ,
+  # '+-8' : ,
+  # '+∆*9! : '
+}
 
 
 def note_midi(note: str, octave: int = None) -> int:
@@ -228,7 +283,7 @@ def tone_to_voicing(tones: Iterable[Union[int, str]]) -> List[int]:
   return l
 
 
-def default_voicing(layers: str):
+def voicing(layers: str):
   """
   Takes a list of layer symbols (values of interval_to_symbol) and creates a default closed voicing.
   In general, it will be better to use custom voicings, especially for complex chords.
@@ -238,7 +293,9 @@ def default_voicing(layers: str):
   >>> list(map(int, default_voicing('1∆5')))
   [0, 4, 7]
   """
-  return [LayerInterval[x] for x in layers]
+  return tone_to_voicing(next(iter(layers_voicings[layers])))
+         if layers in layers_voicings
+         else [LayerInterval[x] for x in layers]
 
 def build_chord(voicing, root):
   return list(map(lambda v: root+v, voicing))
