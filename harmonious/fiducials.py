@@ -9,33 +9,15 @@ roots = {
 
 layers = {
   # prebuilt chord types for diatonic chords
-  (0, True):   '5∆8',
-  (0, False):  '5∆8',
-  (1, True):   '5-8',
-  (1, False):  '5-8',
-  (2, True):   '5∆*',
-  (2, False):  '5∆*',
+  (0, True):   '5∆8',   (1, True):   '5-8',   (2, True):   '5∆*',
+  (0, False):  '5∆8',   (1, False):  '5-8',   (2, False):  '5∆*',
   
   #individual layers to play with
-  (3, True):   '∆',
-  (3, False):  '-',
-  (4, True):   '^',
-  (4, False):  '_',
+  (3, True):   '∆',   (5, True):   '5',   (7, True):   '?',  (9, True):   '9',
+  (3, False):  '-',   (5, False):  '5',   (7, False):  '*',  (9, False):  '9',
+  (4, True):   '^',   (6, True):   'o',   (8, True):  '=',   (10, True):  '<',
+  (4, False):  '_',   (6, False):  '+',   (8, False): '@',   (10, False): '>',
 
-  (5, True):   '5',
-  (5, False):  '5',
-  (6, True):   'o',
-  (6, False):  '+',
-
-  (7, True):   '?',
-  (7, False):  '*',
-
-  (8, True):  '=',
-  (8, False): '@',
-  (9, True):   '9',
-  (9, False):  '9',
-  (10, True):  '<',
-  (10, False): '>',
   (11, True):  '~',
   (11, False): '!',
 }
@@ -45,6 +27,12 @@ def fiducial_chord(fiducial_map):
   roots = list(t.filter(None, t.get(list(fiducial_map.keys()), roots, None)))
   if len(roots) == 0: return []
   # look for layers and qualities
-  quality = ''.join(set(''.join(t.filter(None, t.get([(k, not (2 <= fiducial_map[k][1] <= 5)) for k in fiducial_map], layers, None)))))
+  quality = t.pipe([(k, not (2 <= fiducial_map[k][1] <= 5)) for k in fiducial_map],
+    lambda _: t.get(_, layers, None),
+    lambda _: t.filter(None, _),
+    ''.join,
+    set,
+    ''.join)
+  
   if quality == '': return [roots[0]]
   return chord(roots[0], layers)

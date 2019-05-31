@@ -38,9 +38,13 @@ Simple mapping of note name to MIDI value mod 12.
 MIDI 0th octave begins at 12 + this value. (so C0 = 12, A0 = 21, etc)
 """
 NoteValue : 'NoteValue' = IntEnum('NoteValue', {
+  # note, this order is NOT random
+  # raw note names are preferred to enharmonic equivalents
+  # flats are preferrable to sharps (jazz musician here)
   'C': 0,  'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11,
   'Db':1,  'Gb':6, 'Ab':8, 'Bb':10, 'Eb': 3,
   'C#':1, 'D#':3, 'G#':8, 'A#':10,  'F#': 6,
+  # these are just weird, so they exist only as aliases for B/C E/F respectively.
   'Fb':4,'E#':5,'B#':12, 'Cb':11
 })
 
@@ -60,15 +64,19 @@ b13 13      @ =
 """
 LayerInterval : 'LayerInterval' = IntEnum('LayerInterval', {
   '1': 0,
-  '_': 2, '-': 3, '∆': 4, '^': 5,
+  '_': 2, '-': 3, '∆': 4, '^': 5, # ∆ is not ascii, but it's from music theory, so it's allowed
   'o': 6, '5': 7, '+': 8,
   '6': 9,
-  '*': 10, '?': 11,
+  '*': 10, '?': 11, # could have used 7 for * but it's not clear what maj7 would be
   '8': 12,
-  '<': 13, '9': 14, '>': 15,
+  '<': 13, '9': 14, '>': 15, #do we need to distinguish 9 from _? It's a helpful mnemonic for me, but not necessary.
+  # These pieces are distinguished from 4/b5 because they serve a separate harmonic function
+  # We want students to think about 11/#11 differently than 4/2 sus or b5/#5 .
   '~': 17, '!': 18,
-  '@': 20, '=': 21,
+  # TODO consider better symbol options for 13/b13.
+  '@': 20, '=': 21, # same question for 13/b13 and 6/+.
 })
+
 
 """
 Maps some common chord names to layer stacks for easy testing of synths.
@@ -79,57 +87,34 @@ There are (1 x 3 x 4 x 3 x 4 x 3 x 3) = 1296 towers with maximum 1 sound/layer
 Maybe 40 of those are listed here.
 """
 symbol_layers : Mapping[str, str] = {
-  #major
-  ''     : '5∆8',
-  'M'    : '5∆8',
-  'M6'   : '5∆6',
-  'M7'   : '5∆?',
-  'M9'   : '5∆?9',
-  '6/9'  : '5∆69',
-  'M11'  : '∆^8',
-  'M#11' : '5∆?9!',
+  #major                  # dominant               # minor
+  ''     : '5∆8',         '7'    : '5∆*',          'm'    : '5-8',
+  'M'    : '5∆8',         '9'    : '5∆*9',         'm7'   : '5-*',
+  'M6'   : '5∆6',         '7b9'  : '5∆*<',         'm6'   : '5-6',
+  'M7'   : '5∆?',         '7#9'  : '5∆*>',         'm9'   : '5-*9',
+  'M9'   : '5∆?9',        '7#11' : '5∆*9!',        'm6/9' : '5-69',
+  '6/9'  : '5∆69',        '13'   : '5∆*9=',        'm11'  : '5-*9~',
+  'M11'  : '∆^8',         '7b13' : '5∆*9@',        'm#11' : '5-*9!',
+  'M#11' : '5∆?9!',                                'mM7'  : '5-?',
   'M13'  : '5∆?9=',
-  # dominant
-  '7'    : '5∆*',
-  '9'    : '5∆*9',
-  '7b9'  : '5∆*<',
-  '7#9'  : '5∆*>',
-  '7#11' : '5∆*9!',
-  '13'   : '5∆*9=',
-  '7b13' : '5∆*9@',
-  # minor
-  'm'    : '5-8',
-  'm7'   : '5-*',
-  'm6'   : '5-6',
-  'm9'   : '5-*9',
-  'm6/9' : '5-69',
-  'm11'  : '5-*9~',
-  'm#11' : '5-*9!',
-  'mM7'  : '4.9?',
-  # sus4
-  'sus'  : '5^8',
-  'sus2' : '5_8',
-  'sus4' : '5^8',
-  'M7sus': '5^?',
-  'M9sus': '5^9',
-  '6sus' : '5^6',
-  '6/9sus': '5^69',
-  '7sus' : '5^*',
-  '9sus' : '5^*9',
-  # diminished
-  'o'    : 'o-8',
-  'o7'   : 'o-6',
-  'om7'  : 'o-*',
-  'oM'   : 'o∆',
-  'o9'   : 'o∆*9',
-  'ob9'  : 'o∆*<',
-  #augmented
-  '+'    : '+∆8',
-  '+7'   : '+∆*',
-  '+9'   : '+∆*9',
-  '+b9'  : '+∆*<',
-  '+m'   : '+-8',
-  '++'   : '+∆*9!'
+  
+  # sus4                  # sus4
+  'sus'  : '5^8',         'sus'  : '5^8',
+  'sus4' : '5^8',         'sus4' : '5^8',
+  'M7sus': '5^?',         'M7sus': '5^?',
+  'M9sus': '5^9',         'M9sus': '5^9',
+  '6sus' : '5^6',         '6sus' : '5^6',
+  '6/9sus': '5^69',       '6/9sus': '5^69',
+  '7sus' : '5^*',         '7sus' : '5^*',
+  '9sus' : '5^*9',        '9sus' : '5^*9',
+  
+  # diminished            #augmented
+  'o'    : 'o-8',         '+'    : '+∆8',
+  'o7'   : 'o-6',         '+7'   : '+∆*',
+  'om7'  : 'o-*',         '+9'   : '+∆*9',
+  'oM'   : 'o∆',          '+b9'  : '+∆*<',
+  'o9'   : 'o∆*9',        '+m'   : '+-8',
+  'ob9'  : 'o∆*<',        '++'   : '+∆*9!'
 }
 
 layers_voicings : Mapping[str, Mapping[str, Union[str, List[Union[str, int]]]]] = {
@@ -166,6 +151,47 @@ def note_midi(note: str, octave: int = None) -> int:
     return NoteValue[note[:-1]] + 12*(int(note[-1]) + 1)
   else:
     return None
+
+
+def normalize_layers(layers: Union[str, List[LayerInterval]]) -> str:
+  """
+  Convert the representation of the layers into a sorted string format for looking up voicings.
+  
+  Rotation is meaningless when using layers, so ∆58 = 8∆5. This function maps
+  both to a consistent sorted order of 5∆8 (in order of layer placement on the mat).
+  
+  Duplication of symbols is also meaningless (we don't have a concept of doubling voices),
+  so that is removed as well.
+  
+  Finally, roots aren't necessary because every chord implicitly has a root, so that
+  is removed too.
+  
+  >>> normalize_layers('∆58')
+  '5∆8'
+  >>> normalize_layers('8∆5')
+  '5∆8'
+  >>> normalize_layers('9!∆5_')
+  '5_∆9!'
+  >>> normalize_layers('9o5+*')
+  'o5+*9'
+  """
+  #first, make a consistent format (str, because the rest is a mess)
+  base = (set(LayerInterval(x) for x in layers)
+          if not isinstance(layers, str)
+          else set(LayerInterval[x] for x in layers))
+  #strategy - remove the 1/5, sort the rest, append the 5 in front.
+  base.discard(0)
+  [has6, has7, has8] = [LayerInterval(x) in base for x in (6,7,8)]
+  for x in range(6, 8+1):
+    base.discard(x)
+  
+  return (
+    (LayerInterval(6).name if has6 else '') +
+    (LayerInterval(7).name if has7 else '') +
+    (LayerInterval(8).name if has8 else '') +
+    ''.join(x.name for x in sorted(base))
+  )
+  
 
 
 def tone_to_voicing(tones: Iterable[Union[int, str]]) -> List[int]:
