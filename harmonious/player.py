@@ -4,8 +4,9 @@ import time
 
 import simplejson as json
 from pythonosc import udp_client
+import toolz as t
 
-from harmonious.music import note_midi, voicing, symbol_chord
+from harmonious.music import note_midi, voicing, symbol_chord, chord
 from harmonious.fiducials import fiducial_chord
 
 def play_note(value):
@@ -20,15 +21,6 @@ def play_chord(values):
 def stop_chord(values):
   return '\n'.join(end_note(x) for x in values)
 
-def build_chord(voicing, root):
-  return [root+v for v in voicing]
-
-def chord(root, layers):
-  return build_chord(
-    [0, *voicing(layers)],
-    int(root)
-    if isinstance(root, int) or root.isnumeric()
-    else note_midi(root) or 48)
 
 from multiprocessing import Process, Lock, Manager
 import socket

@@ -3,6 +3,7 @@ import hypothesis.strategies as st
 from harmonious.music import LayerInterval, note_midi, normalize_layers
 
 
+# +- 12 should make no difference to the outcome of the 
 @given(st.text(alphabet='ABCDEFG', min_size=1, max_size=1),
        st.one_of(st.just(''), st.text(alphabet=('b', '#'), min_size=1, max_size=1)),
        st.integers(min_value=0, max_value=8))

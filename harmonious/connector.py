@@ -95,12 +95,13 @@ class Tuio2DBlob(TuioObject):
 
 # ^ Everything above here was taken from a github gist: https://github.com/arminbw/py3tuio/blob/master/py3tuio.py
 
-def make_debouncer(sender, i=0):
+def make_debouncer(sender, i:int=0):
     """
-    After writing this I realized some of this functionality was already above, but not all of it.
+    Create a cache to throttle events coming from the TUIO server, and output diffs of what changes.
 
-    :param sender:
-    :return:
+    :param sender: should take data (in json form) and send it (by printing, sending to a socket, etc)
+    :param i:
+    :return: a function that does the debouncing
     """
     d = {}
     def debounce(objects):

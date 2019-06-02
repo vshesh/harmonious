@@ -120,13 +120,22 @@ symbol_layers : Mapping[str, str] = {
 """
 Maps a set of tones (described by layer/interval symbols) to possible voicings.
 
-Each voicing also has a list of tags describing it in case this is relevant later.
+Each voicing also has a list of tags describing it in case this is relevant later
+for students to select a voicing they want based on some key words
 """
 layers_voicings = {
   '5∆8' : {
     '151∆51': ('guitar',),
     '1∆51'  : ('closed', 'simple', 'triadic'),
     '151∆'  : ('jazz', 'simple')
+  },
+  '5-8' : {
+    '151-51': ('guitar'),
+    '1-51':   ('closed', 'simple', 'triadic'),
+    '151-':   ('jazz', 'simple')
+  },
+  '5∆*': {
+    '15*∆': ('guitar')
   },
   '5∆?' : {
     '15?1∆51': ('guitar',),
@@ -283,29 +292,36 @@ def tone_to_voicing(tones: Iterable[Union[int, str]]) -> List[int]:
   return l
 
 
-def voicing(layers: str):
+def default_voicing(layers: str):
   """
   Takes a list of layer symbols (values of interval_to_symbol) and creates a default closed voicing.
   In general, it will be better to use custom voicings, especially for complex chords.
   
   :param symbol: a string, where each character reflects an interval in the chord.
-  
-  >>> list(map(int, default_voicing('1∆5')))
-  [0, 4, 7]
   """
-  return tone_to_voicing(next(iter(layers_voicings[layers])))
+  return [LayerInterval[x] for x in layers]
+
+
+def voicing(layers: str, inversion: bool = False):
+  base = (tone_to_voicing(next(iter(layers_voicings[layers])))
          if layers in layers_voicings
-         else [LayerInterval[x] for x in layers]
+         else default_voicing(layers))
+  # naive inversion - if inverted, drop the root at the front of the chord
+  # ideally we'd have separate voicings for the inversions.
+  return base[1:] if inversion else base
+
 
 def build_chord(voicing, root):
   return list(map(lambda v: root+v, voicing))
 
+
 def chord(root, layers):
   return build_chord(
-    [0, *default_voicing(layers)],
+    [0, *voicing(layers)],
     int(root)
     if isinstance(root, int) or root.isnumeric()
     else note_midi(root) or 48)
+
 
 def symbol_chord(root, symbol):
   return chord(root, symbol_layers.get(symbol, '5∆8'))
