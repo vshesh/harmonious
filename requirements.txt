@@ -6,3 +6,5 @@ requests>=2.19.1
 simplejson>=3.16.0
 toolz>=0.9.0
 python-osc>=1.7.0
+Cython>=0.29.5
+pyliblo>=0.10.0

@@ -125,22 +125,25 @@ for students to select a voicing they want based on some key words
 """
 layers_voicings = {
   '5∆8' : {
-    '151∆51': ('guitar',),
+    '151∆'  : ('jazz', 'simple'),
     '1∆51'  : ('closed', 'simple', 'triadic'),
-    '151∆'  : ('jazz', 'simple')
+    '151∆51': ('guitar',),
   },
   '5-8' : {
     '151-51': ('guitar'),
     '1-51':   ('closed', 'simple', 'triadic'),
-    '151-':   ('jazz', 'simple')
+    '151-':   ('jazz', 'simple'),
   },
   '5∆*': {
     '15*∆': ('guitar')
   },
   '5∆?' : {
-    '15?1∆51': ('guitar',),
+    '151∆?': ('closed', 'triadic', 'simple'),
     '1?∆5': ('guitar', 'simple'),
-    '1∆5?': ('closed', 'triadic', 'simple')
+    '15?1∆51': ('guitar',),
+  },
+  '5∆?9': {
+    '15?9∆5?': ('piano'),
   },
   '5∆69' : {
     '1561∆59': ('neely',)

@@ -1,6 +1,8 @@
 from typing import List, Iterable, Union
 import sys
 import time
+from multiprocessing import Process, Lock, Manager
+import socket
 
 import simplejson as json
 from pythonosc import udp_client
@@ -21,12 +23,10 @@ def play_chord(values):
 def stop_chord(values):
   return '\n'.join(end_note(x) for x in values)
 
-
-from multiprocessing import Process, Lock, Manager
-import socket
-
+ 
 HOST = '127.0.0.1'  # The server's hostname or IP address
 PORT = 8000         # The port used by the server
+
 
 def send(HOST, PORT, msg):
   if msg.strip() == '': return
@@ -49,7 +49,7 @@ def bar(notes):
     try:
       send(HOST, PORT, play_chord(notes))
     finally:
-      time.sleep(1.5)
+      time.sleep(2.5)
 
 
 def poller(notes):
@@ -71,11 +71,13 @@ def setter(notes):
     notes[:] = t.get(list(range(max(state.keys())+1)), t.valmap(fiducial_chord, state), default=[])
     print('notes = ', notes)
 
+
 def symbol_setter(notes):
   stdin = open(0)
   print('symbol_setter is active')
   for line in stdin:
     notes[:] = [symbol_chord(*line.split())] if len(line.split()) == 2 else [[]]
+
 
 if __name__ == '__main__':
   manager = Manager()

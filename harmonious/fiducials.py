@@ -20,16 +20,17 @@ layers = {
   (53, True):   '5∆8',   (54, True):   '5-8',   (55, True):   '5∆*',
   (53, False):  '5∆8',   (54, False):  '5-8',   (55, False):  '5∆*',
   
+  
   #individual layers to play with
-  (3, True):   '∆',   (5, True):   '5',   (7, True):   '?',  (9, True):   '9',
-  (3, False):  '-',   (5, False):  '5',   (7, False):  '*',  (9, False):  '9',
-  (4, True):   '^',   (6, True):   'o',   (8, True):  '=',   (10, True):  '<',
-  (4, False):  '_',   (6, False):  '+',   (8, False): '@',   (10, False): '>',
-
+  (3, True):   '∆',   (5, True):   '5',   (7, True):   '?',   (9, True):   '9',
+  (3, False):  '-',   (5, False):  '5',   (7, False):  '*',   (9, False):  '9',
+  (4, True):   '^',   (6, True):   'o',   (8, True):   '=',   (10, True):  '<',
+  (4, False):  '_',   (6, False):  '+',   (8, False):  '@',   (10, False): '>',
+  
   (11, True):  '~',
   (11, False): '!',
-
-
+  
+  
   #individual layers to play with - second copy because not enough fiducials printed
   (73, True):   '∆',   (75, True):   '5',   (77, True):   '?',  (79, True):   '9',
   (73, False):  '-',   (75, False):  '5',   (77, False):  '*',  (79, False):  '9',
