@@ -31,7 +31,7 @@ from bidict import bidict
 import sys
 import regex as re
 import toolz as t
-from typing import List, Iterable, Union, Mapping
+from typing import List, Iterable, Union, Mapping, Optional
 
 """
 Simple mapping of note name to MIDI value mod 12.
@@ -56,13 +56,14 @@ these are based on 'layer' presence or absences
 
 1 - blank
 5 (b5 #5)   5 o +
-b3 3 (2 4)  - ∆ 2 4
+b3 3 (2 4)  - ∆ _ ^
 b7 7        * !
 9 (b9 #9)   9 < >
 11 #11      ~ ?
 b13 13      @ =
 """
 LayerInterval : 'LayerInterval' = IntEnum('LayerInterval', {
+  '0':-12,
   '1': 0,
   '_': 2, '-': 3, '∆': 4, '^': 5, # ∆ is not ascii, but it's from music theory, so it's allowed
   'o': 6, '5': 7, '+': 8,
@@ -76,7 +77,7 @@ LayerInterval : 'LayerInterval' = IntEnum('LayerInterval', {
   # TODO consider better symbol options for 13/b13.
   '@': 20, '=': 21, # same question for 13/b13 and 6/+.
 })
-
+LayerInterval.__str__ = lambda self: self.name
 
 """
 Maps some common chord names to layer stacks for easy testing of synths.
@@ -113,8 +114,8 @@ symbol_layers : Mapping[str, str] = {
   'o7'   : 'o-6',         '+7'   : '+∆*',
   'om7'  : 'o-*',         '+9'   : '+∆*9',
   'oM'   : 'o∆',          '+b9'  : '+∆*<',
-  'o9'   : 'o∆*9',        '+m'   : '+-8',
-  'ob9'  : 'o∆*<',        '++'   : '+∆*9!'
+  'o9'   : 'o-*9',        '+m'   : '+-8',
+  'ob9'  : 'o-*<',        '++'   : '+∆*9!'
 }
 
 """
@@ -127,7 +128,7 @@ layers_voicings = {
   '5∆8' : {
     '151∆'  : ('jazz', 'simple'),
     '1∆51'  : ('closed', 'simple', 'triadic'),
-    '151∆51': ('guitar',),
+    '151∆51': ('guitar', 'grand'),
   },
   '5-8' : {
     '151-51': ('guitar'),
@@ -193,7 +194,7 @@ layers_voicings = {
 }
 
 
-def note_midi(note: str, octave: int = None) -> int:
+def note_midi(note: str, octave: Optional[int] = None) -> int:
   """
   Returns absolute midi value of a note specified as pitch+octave, eg: A3
   
@@ -318,7 +319,7 @@ def build_chord(voicing, root):
   return list(map(lambda v: root+v, voicing))
 
 
-def chord(root, layers):
+def chord(root: Union[int, str], layers: str, inversion: bool = False):
   return build_chord(
     [0, *voicing(layers)],
     int(root)

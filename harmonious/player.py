@@ -23,9 +23,9 @@ def play_chord(values):
 def stop_chord(values):
   return '\n'.join(end_note(x) for x in values)
 
- 
-HOST = '127.0.0.1'  # The server's hostname or IP address
-PORT = 8000         # The port used by the server
+
+HOST = '127.0.0.1'  # The synth's hostname or IP address
+PORT = 8000         # The port used by the synth
 
 
 def send(HOST, PORT, msg):
@@ -41,15 +41,19 @@ def send(HOST, PORT, msg):
       totalsent = totalsent + sent
 
 
-oscsender = udp_client.SimpleUDPClient('127.0.0.1', 3334)
+oscsender = udp_client.SimpleUDPClient('192.168.43.149', 3334)
 
 
 def bar(notes):
   for i in range(2):
-    try:
-      send(HOST, PORT, play_chord(notes))
-    finally:
-      time.sleep(2.5)
+      send(HOST, PORT, play_chord(notes[1:]))
+      time.sleep(0.3)
+      send(HOST, PORT, play_chord(notes[0:1]))
+      time.sleep(0.3)
+      send(HOST, PORT, play_chord(notes[1:]))
+      time.sleep(0.3)
+      send(HOST, PORT, play_chord(notes[0:1]))
+      time.sleep(0.3)
 
 
 def poller(notes):
@@ -67,7 +71,8 @@ def setter(notes):
   state = {0: {}}
   print('setter is active')
   for line in stdin:
-    state = t.merge(state, json.loads(line, object_hook=lambda d: {int(k) if k.lstrip('-').isdigit() else k: v for k, v in d.items()}))
+    state = t.merge(state, json.loads(line,
+      object_hook=lambda d: {int(k) if k.lstrip('-').isdigit() else k: v for k, v in d.items()}))
     notes[:] = t.get(list(range(max(state.keys())+1)), t.valmap(fiducial_chord, state), default=[])
     print('notes = ', notes)
 
