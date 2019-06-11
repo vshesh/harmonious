@@ -66,11 +66,13 @@ class TuioClient(ServerThread):
                    self.tuio2DBlob = self._tuioObjectsNew
            self._tuioObjectsNew = []
 
-class TuioObject(object):
+class TuioObject:
     """this represents a TUIO object"""
     def __init__(self, args, argsLength):
         if (len(args) != argsLength):
             raise ValueError("TUIO Message: wrong number of arguments")
+    def __repr__(self):
+      return repr(self.__dict__)
 
 class Tuio2DCursor(TuioObject):
     """this represents a TUIO 2D cursor"""
@@ -111,7 +113,7 @@ def make_debouncer(sender, i:int=0):
                 changed = True
             d[o.markerId] = (datetime.now(), o.x, o.y, round(o.angle) % 6)
         
-        old = t.valfilter(lambda x: (datetime.now() - x[0]).seconds > 0.5, d)
+        old = t.valfilter(lambda x: (datetime.now() - x[0]).seconds > 0.2, d)
         for o in old:
             d.pop(o)
         
@@ -123,6 +125,8 @@ def make_debouncer(sender, i:int=0):
             sender(json.dumps({i: {}}))
           else:
             sender( json.dumps({i: {k:[v[-2], v[-1]] for k,v in d.items()}}) )
+        
+        #print(f"{i} :", d)
     return debounce
 
 
@@ -140,6 +144,8 @@ def demo(NUM_PADS):
     while (True):
         time.sleep(0.1)
         try:
+          #print("\033[H\033[J") # clear screen
+          #print(client.tuio2DObjects)
           for i in range(len(debounce_senders)):
             # send to corresponding cache if the position has changed.
             debounce_senders[i](o for o in client.tuio2DObjects if math.floor(NUM_PADS*o.x) == NUM_PADS-1-i)

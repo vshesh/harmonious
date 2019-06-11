@@ -41,7 +41,7 @@ def send(HOST, PORT, msg):
       totalsent = totalsent + sent
 
 
-oscsender = udp_client.SimpleUDPClient('192.168.43.149', 3334)
+oscsender = udp_client.SimpleUDPClient('192.168.43.75', 3334)
 
 
 def bar(notes):

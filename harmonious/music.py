@@ -70,7 +70,7 @@ LayerInterval : 'LayerInterval' = IntEnum('LayerInterval', {
   '6': 9,
   '*': 10, '?': 11, # could have used 7 for * but it's not clear what maj7 would be
   '8': 12,
-  '<': 13, '9': 14, '>': 15, #do we need to distinguish 9 from _? It's a helpful mnemonic for me, but not necessary.
+  '<': 13, '9': 14, '>': 15, #do we need to distinguish 9 from _? It's helpful for me, but not necessary.
   # These pieces are distinguished from 4/b5 because they serve a separate harmonic function
   # We want students to think about 11/#11 differently than 4/2 sus or b5/#5 .
   '~': 17, '!': 18,
@@ -312,7 +312,7 @@ def voicing(layers: str, inversion: bool = False):
          else default_voicing(layers))
   # naive inversion - if inverted, drop the root at the front of the chord
   # ideally we'd have separate voicings for the inversions.
-  return base[1:] if inversion else base
+  return base[1:] + [base[0]+12] if inversion else base
 
 
 def build_chord(voicing, root):
@@ -321,7 +321,7 @@ def build_chord(voicing, root):
 
 def chord(root: Union[int, str], layers: str, inversion: bool = False):
   return build_chord(
-    [0, *voicing(layers)],
+    [0, *voicing(layers, inversion)],
     int(root)
     if isinstance(root, int) or root.isnumeric()
     else note_midi(root) or 48)
