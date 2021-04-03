@@ -31,7 +31,7 @@ PORT = 8000         # The port used by the synth
 def send(HOST, PORT, msg):
   if msg.strip() == '': return
   with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+    #s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
     s.connect((HOST, PORT))
     totalsent = 0
     while totalsent < len(msg):
@@ -41,8 +41,7 @@ def send(HOST, PORT, msg):
       totalsent = totalsent + sent
 
 
-oscsender = udp_client.SimpleUDPClient('192.168.43.75', 3334)
-
+oscsender = udp_client.SimpleUDPClient('192.168.43.149', 3335)
 
 def bar(notes):
   for i in range(2):
@@ -61,7 +60,7 @@ def poller(notes):
   i = 0
   while True:
     if i >= len(notes): i = 0
-    oscsender.send_message('/light', [i, (i-1) % len(notes)])
+    #oscsender.send_message('/light', [i, (i-1) % len(notes)])
     bar(notes[i])
     i += 1
 
